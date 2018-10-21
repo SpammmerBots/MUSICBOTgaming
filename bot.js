@@ -312,34 +312,6 @@ function play(guild, song) {
 }
 
 
-client.on('message', message => {
-    if (message.content === 'g!help-music') {
-        let helpEmbed = new Discord.RichEmbed()
-        .setTitle('**أوامر الميوزك...**')
-        .setDescription('**برفكس البوت (!)**')
-        .addField('g!play', 'لتشغيل اغنية')
-        .addField('g!join', 'دخول رومك الصوتي')
-        .addField('g!disconnect', 'الخروج من رومك الصوتي')
-        .addField('g!skip', 'تخطي الأغنية')
-        .addField('g!pause', 'ايقاف الاغنية مؤقتا')
-        .addField('g!resume', 'تكملة الاغنية')
-        .addField('g!queue', 'اظهار قائمة التشغيل')
-        .addField('g!np', 'اظهار الاغنية اللي انت مشغلها حاليا')
-        .setFooter('(g!inv)لدعوة البوت')
-      message.channel.send(helpEmbed);
-    }
-});
 
-client.on('message', message => {
-    if (message.content === 'general_commands') {
-        let helpEmbed = new Discord.RichEmbed()
-        .setTitle('**أوامر عامة...**')
-        .addField('avatar', "افاتار الشخص المطلوب")
-        .addField('gif', 'البحث عن جيف انت تطلبه')
-        .addField('ping', 'معرفة ping البوت')
-        .setFooter('المزيد قريبا ان شاء الله!')
-      message.channel.send(helpEmbed);
-    }
-});
 
 client.login(process.env.BOT_TOKEN);
