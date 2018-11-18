@@ -46,379 +46,197 @@ client.on('message', async msg =>{
 /////////////////////////
 ////////////////////////
 //////////////////////
-client.on('message', async msg => {
-    if(msg.author.bot) return undefined;
 
+client.on('message', async msg => { // eslint-disable-line
+	if (msg.author.bot) return undefined;
+	//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+	if (!msg.content.startsWith(prefix)) return undefined;
+	const args = msg.content.split(' ');
+	const searchString = args.slice(1).join(' ');
+	//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+	const url = args[1] ? args[1].replace(/<(.+)>/g, '$1') : '';
+	const serverQueue = queue.get(msg.guild.id);
+//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+	let command = msg.content.toLowerCase().split(" ")[0];
+	command = command.slice(prefix.length)
+//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+	if (command === `play`) {
+		const voiceChannel = msg.member.voiceChannel;
+		if (!voiceChannel) return msg.channel.send('**يجب توآجد حضرتك بروم صوتي **.');
+		const permissions = voiceChannel.permissionsFor(msg.client.user);
+		if (!permissions.has('CONNECT')) {
+			//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+			return msg.channel.send('**لا يتوآجد لدي صلاحية للتكلم بهذآ الروم**');
+		}//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+		if (!permissions.has('SPEAK')) {
+			return msg.channel.send('**لا يتوآجد لدي صلاحية للتكلم بهذآ الروم**');
+		}//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 
-    const prefixMention = new RegExp(`^<@!?${client.user.id}>( |)$`);
-  if (msg.content.match(prefixMention)) {
-    return msg.reply(`My prefix is \`${prefix}\``);
-  }
+		if (!permissions.has('EMBED_LINKS')) {
+			return msg.channel.sendMessage("**يجب توآفر برمشن `EMBED LINKS`لدي **")
+		}
 
-if(!msg.content.startsWith(prefix)) return undefined;
-
-  const args = msg.content.slice(prefix.length).trim().split(/ +/g);
-const command = args.shift().toLowerCase();
-
-    const url = args[1] ? args[1].replace(/<(.+)>/g, '$1') : '';
-
-    let cmds = {
-      play: { cmd: 'play', a: ['p'] },
-      skip: { cmd: 'skip', a: ['s'] },
-      stop: { cmd: 'stop' },
-      pause: { cmd: 'pause' },
-      resume: { cmd: 'resume', a: ['r'] },
-      volume: { cmd: 'volume', a: ['vol'] },
-      queue: { cmd: 'queue', a: ['q'] },
-      repeat: { cmd: 'repeat', a: ['re'] },
-      forceskip: { cmd: 'forceskip', a: ['fs', 'fskip'] },
-      skipto: { cmd: 'skipto', a: ['st'] }
-    };
-
-  Object.keys(cmds).forEach(key => {
-    var value = cmds[key];
-      var command = value.cmd;
-      client.commands.set(command, command);
-
-      if(value.a) {
-        value.a.forEach(alias => {
-        client.aliases.set(alias, command)
-      })
-      }
-  })
-
-    let cmd = client.commands.get(command) || client.commands.get(client.aliases.get(command))
-
-    if(cmd === 'play') {
-        const voiceChannel = msg.member.voiceChannel;
-        if(!voiceChannel) return msg.channel.send(`:no_entry_sign: You must be listening in a voice channel to use that!`);
-        const permissions = voiceChannel.permissionsFor(msg.client.user);
-        if(!permissions.has('CONNECT')) {
-            return msg.channel.send(`:no_entry_sign: I can't join Your voiceChannel because i don't have ` + '`' + '`CONNECT`' + '`' + ` permission!`);
-        }
-
-        if(!permissions.has('SPEAK')) {
-            return msg.channel.send(`:no_entry_sign: I can't SPEAK in your voiceChannel because i don't have ` + '`' + '`SPEAK`' + '`' + ` permission!`);
-        }
-
-        if (url.match(/^https?:\/\/(www.youtube.com|youtube.com)\/playlist(.*)$/)) {
+		if (url.match(/^https?:\/\/(www.youtube.com|youtube.com)\/playlist(.*)$/)) {
 			const playlist = await youtube.getPlaylist(url);
 			const videos = await playlist.getVideos();
-
+			//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 			for (const video of Object.values(videos)) {
 				const video2 = await youtube.getVideoByID(video.id); // eslint-disable-line no-await-in-loop
 				await handleVideo(video2, msg, voiceChannel, true); // eslint-disable-line no-await-in-loop
-			}
-			return msg.channel.send(`Added to queue: ${playlist.title}`);
+			}//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+			return msg.channel.send(` **${playlist.title}**  **تم الإضآفة إلى قأئمة التشغيل**`);
 		} else {
-			try {
+			try {//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 
 				var video = await youtube.getVideo(url);
 			} catch (error) {
-				try {
-					var videos = await youtube.searchVideos(args, 1);
-
+				try {//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+					var videos = await youtube.searchVideos(searchString, 5);
+					let index = 0;
+					const embed1 = new Discord.RichEmbed()
+			        .setDescription(`**الرجآء من حضرتك إختيآر رقم المقطع** :
+${videos.map(video2 => `[**${++index} **] \`${video2.title}\``).join('\n')}`)
+//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+					.setFooter("ZeusSHOP Community ©")
+					msg.channel.sendEmbed(embed1).then(message =>{message.delete(20000)})
+					
 					// eslint-disable-next-line max-depth
-					var video = await youtube.getVideoByID(videos[0].id);
+					try {
+						var response = await msg.channel.awaitMessages(msg2 => msg2.content > 0 && msg2.content < 11, {
+							maxMatches: 1,
+							time: 15000,
+							errors: ['time']
+						});//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+					} catch (err) {
+						console.error(err);
+						return msg.channel.send('**لم يتم إختيآر مقطع صوتي**');
+					}
+					const videoIndex = parseInt(response.first().content);
+					var video = await youtube.getVideoByID(videos[videoIndex - 1].id);
 				} catch (err) {
 					console.error(err);
-					return msg.channel.send('I can\'t find any thing');
+					return msg.channel.send('**:X: لا يتوفر نتآئج بحث **');
 				}
-			}
+			}//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 
 			return handleVideo(video, msg, voiceChannel);
-		}
+		}//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+	} else if (command === `skip`) {
+		if (!msg.member.voiceChannel) return msg.channel.send('**أنت لست بروم صوتي **.');
+		if (!serverQueue) return msg.channel.send('لا يتوفر مقطع لتجآوزه');
+		serverQueue.connection.dispatcher.end('تم تجآوز هذآ المقطع');
+		return undefined;
+	} else if (command === `stop`) {//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+		if (!msg.member.voiceChannel) return msg.channel.send('**أنت لست بروم صوتي** .');
+		if (!serverQueue) return msg.channel.send('**لا يتوفر مقطع لإيقآفه**');
+		serverQueue.songs = [];
+		serverQueue.connection.dispatcher.end('**تم إيقآف هذآ المقطع**');
+		return undefined;
+	} else if (command === `vol`) {
+		if (!msg.member.voiceChannel) return msg.channel.send('**أنت لست بروم صوتي** .');
+		if (!serverQueue) return msg.channel.send('لا يوجد شيء شغآل.');
+		if (!args[1]) return msg.channel.send(`:loud_sound: مستوى الصوت **${serverQueue.volume}**`);
+		serverQueue.volume = args[1];//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+		serverQueue.connection.dispatcher.setVolumeLogarithmic(args[1] / 50);
+		return msg.channel.send(`**:speaker: تم تغير الصوت الي** **${args[1]}**`);
+	} else if (command === `np`) {
+		if (!serverQueue) return msg.channel.send('**لا يوجد شيء حالي ف العمل.**');
+		const embedNP = new Discord.RichEmbed()
+	.setDescription(`:notes: الان يتم تشغيل : **${serverQueue.songs[0].title}**`)
+		return msg.channel.sendEmbed(embedNP);
+	} else if (command === `queue`) {
+		//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+		if (!serverQueue) return msg.channel.send('**لا يوجد شيء حالي ف العمل**');
+		let index = 0;
+		//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+		const embedqu = new Discord.RichEmbed()
+//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+.setDescription(`**Songs Queue**
+${serverQueue.songs.map(song => `**${++index} -** ${song.title}`).join('\n')}
+**الان يتم تشغيل** ${serverQueue.songs[0].title}`)
+		return msg.channel.sendEmbed(embedqu);
+	} else if (command === `pause`) {
+		if (serverQueue && serverQueue.playing) {
+			serverQueue.playing = false;
+			serverQueue.connection.dispatcher.pause();
+			return msg.channel.send('**تم إيقاف الموسيقى مؤقتا!**');
+		}//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+		return msg.channel.send('**لا يوجد شيء حالي ف العمل.**');
+	} else if (command === "resume") {
+		if (serverQueue && !serverQueue.playing) {
+			serverQueue.playing = true;
+			serverQueue.connection.dispatcher.resume();
+			return msg.channel.send('**استأنفت الموسيقى بالنسبة لك** !');
+		}//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+		return msg.channel.send('لا يوجد شيء حالي في العمل.');
+	}
 
-        async function handleVideo(video, msg, voiceChannel, playlist = false) {
-	const serverQueue = active.get(msg.guild.id);
-
-
+	return undefined;
+});
+//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+async function handleVideo(video, msg, voiceChannel, playlist = false) {
+	const serverQueue = queue.get(msg.guild.id);
+	console.log(video);
+	//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 //	console.log('yao: ' + Util.escapeMarkdown(video.thumbnailUrl));
-
-let hrs = video.duration.hours == 1 ? (video.duration.hours > 9 ? `${video.duration.hours}:` : `0${video.duration.hours}:`) : '';
-let min = video.duration.minutes > 9 ? `${video.duration.minutes}:` : `0${video.duration.minutes}:`;
-let sec = video.duration.seconds > 9 ? `${video.duration.seconds}` : `0${video.duration.seconds}`;
-let dur = `${hrs}${min}${sec}`
-
 	const song = {
 		id: video.id,
-		title: video.title,
-    duration: dur,
+		title: Util.escapeMarkdown(video.title),
 		url: `https://www.youtube.com/watch?v=${video.id}`
-	};
+	};//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 	if (!serverQueue) {
 		const queueConstruct = {
 			textChannel: msg.channel,
 			voiceChannel: voiceChannel,
 			connection: null,
 			songs: [],
-			volume: 50,
-			playing: true,
-      repeating: false
-		};
-		active.set(msg.guild.id, queueConstruct);
-
+			volume: 5,
+			playing: true
+		};//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+		queue.set(msg.guild.id, queueConstruct);
+//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 		queueConstruct.songs.push(song);
-
+//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 		try {
 			var connection = await voiceChannel.join();
 			queueConstruct.connection = connection;
 			play(msg.guild, queueConstruct.songs[0]);
 		} catch (error) {
 			console.error(`I could not join the voice channel: ${error}`);
-			active.delete(msg.guild.id);
-			return msg.channel.send(`I cant join this voice channel`);
+			queue.delete(msg.guild.id);
+			return msg.channel.send(`**لا أستطيع دخول هذآ الروم** ${error}`);
 		}
-	} else {
+	} else {//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 		serverQueue.songs.push(song);
-
+		console.log(serverQueue.songs);
 		if (playlist) return undefined;
-		if(!args) return message.channel.send('no results.');
-		else return msg.channel.send(':watch: Loading... [`' + args + '`]').then(m => {
-      setTimeout(() => {//:watch: Loading... [let]
-        m.edit(`:notes: Added **${song.title}**` + '(` ' + song.duration + ')`' + ` to the queue at position ` + `${serverQueue.songs.length}`);
-      }, 500)
-    }) //:notes: Added FROZEN | Let It Go Sing-along | Official Disney UK (04:03)  to the queue at position 1
+		else return msg.channel.send(` **${song.title}** تم اضافه الاغنية الي القائمة!`);
 	}
 	return undefined;
-}
+}//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 
 function play(guild, song) {
-	const serverQueue = active.get(guild.id);
+	const serverQueue = queue.get(guild.id);
 
-	if (!song) {
+	if (!song) {//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 		serverQueue.voiceChannel.leave();
-		active.delete(guild.id);
-		return;
-	}
+		queue.delete(guild.id);
+		return;//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+	}//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 	console.log(serverQueue.songs);
-  if(serverQueue.repeating) {
-    serverQueue.textChannel.send(`**Repeating:** ${song.title}`);
-  } else {
-	serverQueue.textChannel.send(':notes: Added **' + song.title + '** (`' + song.duration + '`) to begin playing.');
-}
+//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 	const dispatcher = serverQueue.connection.playStream(ytdl(song.url))
-		.on('end', reason => {
+		.on('end', reason => {//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 			if (reason === 'Stream is not generating quickly enough.') console.log('Song ended.');
 			else console.log(reason);
-      if(serverQueue.repeating) return play(guild, serverQueue.songs[0])
-			serverQueue.songs.shift();
+			serverQueue.songs.shift();//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 			play(guild, serverQueue.songs[0]);
-		})
-		.on('error', error => console.error(error));
-	dispatcher.setVolumeLogarithmic(serverQueue.volume / 100);
+		})//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+		.on('error', error => console.error(error));//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
+	dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);//by ,$ ReBeL ء , ??#4777 'CODES SERVER'
 
-
+	serverQueue.textChannel.send(`**بدء تشغيل** : **${song.title}**`);
 }
-} else if(cmd === 'stop') {
-        if(msg.guild.me.voiceChannel !== msg.member.voiceChannel) return msg.channel.send(`You must be in ${msg.guild.me.voiceChannel.name}`)
-        if(!msg.member.hasPermission('ADMINISTRATOR')) {
-          msg.react('❌')
-          return msg.channel.send('You don\'t have permission `ADMINSTRATOR`');
-        }
-        let queue = active.get(msg.guild.id);
-        queue.voiceChannel.leave();
-        return msg.channel.send(':notes: The player has stopped and the queue has been cleared.');
-
-    } else if(cmd === 'skip') {
-
-      let vCh = msg.member.voiceChannel;
-
-      let queue = active.get(msg.guild.id);
-
-        if(!vCh) return msg.channel.send('Sorry, but you can\'t because you are not in voice channel');
-
-        if(!queue) return msg.channel.send('No music playing to skip it');
-
-        if(queue.repeating) return msg.channel.send('You can\'t skip it, because repeating mode is on, run ' + `\`${prefix}forceskip\``);
-
-        let req = vCh.members.size - 1;
-
-        if(req == 1) {
-            msg.channel.send('**:notes: Skipped **' + args);
-            return queue.connection.dispatcher.end('Skipping ..')
-        }
-
-        if(!queue.votes) queue.votes = [];
-
-        if(queue.votes.includes(msg.member.id)) return msg.say(`You already voted for skip! ${queue.votes.length}/${req}`);
-
-        queue.votes.push(msg.member.id);
-
-        if(queue.votes.length >= req) {
-            msg.channel.send('**:notes: Skipped **' + args);
-
-            delete queue.votes;
-
-            return queue.connection.dispatcher.end('Skipping ..')
-        }
-
-        msg.channel.send(`**You have successfully voted for skip! ${queue.votes.length}/${req}**`)
-
-    } else if(cmd === 'pause') {
-
-      let queue = active.get(msg.guild.id);
-
-        let vCh = msg.member.voiceChannel;
-
-        if(!vCh || vCh !== msg.guild.me.voiceChannel) return msg.channel.send(`You are not in my voice channel.`);
-
-        if(!queue) {
-            return msg.channel.send('No music playing to pause.')
-        }
-
-        if(!queue.playing) return msg.channel.send(':no_entry_sign: There must be music playing to use that!')
-
-        let disp = queue.connection.dispatcher;
-
-        disp.pause('Pausing..')
-
-        queue.playing = false;
-
-        msg.channel.send(':notes: Paused ' + args + '. **Type** `' + prefix + 'resume` to unpause!')
-
-    } else if (cmd === 'resume') {
-
-      let queue = active.get(msg.guild.id);
-
-        let vCh = msg.member.voiceChannel;
-
-        if(!vCh || vCh !== msg.guild.me.voiceChannel) return msg.channel.send(`You are not in my voice channel.`);
-
-        if(!queue) return msg.channel.send(':notes: No music paused to resume.')
-
-        if(queue.playing) return msg.channel.send(':notes: No music paused to resume.')
-
-        let disp = queue.connection.dispatcher;
-
-        disp.resume('Resuming..')
-
-        queue.playing = true;
-
-        msg.channel.send(':notes: Resumed ' + args + '.')
-
-    } else if(cmd === 'volume') {
-
-      let queue = active.get(msg.guild.id);
-
-      if(!queue || !queue.songs) return msg.channel.send(':notes: There is no music playing to set volume.');
-
-      let vCh = msg.member.voiceChannel;
-
-      if(!vCh || vCh !== msg.guild.me.voiceChannel) return msg.channel.send(':notes: You are not in my voice channel');
-
-      let disp = queue.connection.dispatcher;
-
-      if(isNaN(args[0])) return msg.channel.send(':notes: Numbers only!');
-
-      if(parseInt(args[0]) > 100) return msg.channel.send('You can\'t set the volume more than 100.')
-//:speaker: Volume changed from 20 to 20 ! The volume has been changed from ${queue.volume} to ${args[0]}
-      msg.channel.send(':speaker: Volume has been **changed** from (`' + queue.volume + '`) to (`' + args[0] + '`)');
-
-      queue.volume = args[0];
-
-      disp.setVolumeLogarithmic(queue.volume / 100);
-
-    } else if (cmd === 'queue') {
-
-      let queue = active.get(msg.guild.id);
-
-      if(!queue) return msg.channel.send(':no_entry_sign: There must be music playing to use that!');
-
-      let embed = new Discord.RichEmbed()
-      .setAuthor(`${client.user.username}`, client.user.displayAvatarURL)
-      let text = '';
-
-      for (var i = 0; i < queue.songs.length; i++) {
-        let num;
-        if((i) > 8) {
-          let st = `${i+1}`
-          console.log(st);
-          let n1 = conv.toWords(st[0])
-          let n2 = conv.toWords(st[1])
-          num = `:${n1}::${n2}:`
-        } else {
-        let n = conv.toWords(i+1)
-        num = `:${n}:`
-      }
-        text += `${num} ${queue.songs[i].title} [${queue.songs[i].duration}]\n`
-      }
-      embed.setDescription(`Songs Queue | ${msg.guild.name}\n\n ${text}`)
-      msg.channel.send(embed)
-
-    } else if(cmd === 'repeat') {
-
-      let vCh = msg.member.voiceChannel;
-
-      if(!vCh || vCh !== msg.guild.me.voiceChannel) return msg.channel.send('You are not in my voice channel');
-
-      let queue = active.get(msg.guild.id);
-
-      if(!queue || !queue.songs) return msg.channel.send('There is no music playing to repeat it.');
-
-      if(queue.repeating) {
-        queue.repeating = false;
-        return msg.channel.send(':arrows_counterclockwise: **Repeating Mode** (`False`)');
-      } else {
-        queue.repeating = true;
-        return msg.channel.send(':arrows_counterclockwise: **Repeating Mode** (`True`)');
-      }
-
-    } else if(cmd === 'forceskip') {
-
-      let vCh = msg.member.voiceChannel;
-
-      if(!vCh || vCh !== msg.guild.me.voiceChannel) return msg.channel.send('You are not in my voice channel');
-
-      let queue = active.get(msg.guild.id);
-
-      if(queue.repeating) {
-
-        queue.repeating = false;
-
-        msg.channel.send('ForceSkipped, Repeating mode is on.')
-
-        queue.connection.dispatcher.end('ForceSkipping..')
-
-        queue.repeating = true;
-
-      } else {
-
-        queue.connection.dispatcher.end('ForceSkipping..')
-
-        msg.channel.send('ForceSkipped.')
-
-      }
-
-    } else if(cmd === 'skipto') {
-
-      let vCh = msg.member.voiceChannel;
-
-      if(!vCh || vCh !== msg.guild.me.voiceChannel) return msg.channel.send('You are not in my voice channel');
-
-      let queue = active.get(msg.guild.id);
-
-      if(!queue.songs || queue.songs < 2) return msg.channel.send('There is no music to skip to.');
-
-    if(queue.repeating) return msg.channel.send('You can\'t skip, because repeating mode is on, run ' + `\`${prefix}repeat\` to turn off.`);
-
-      if(!args[0] || isNaN(args[0])) return msg.channel.send('Please input song number to skip to it, run ' + prefix + `queue` + ' to see songs numbers.');
-
-      let sN = parseInt(args[0]) - 1;
-
-      if(!queue.songs[sN]) return msg.channel.send('There is no song with this number.');
-
-      while (0 < sN) {
-        queue.songs.shift();
-      }
-
-      msg.channel.send(`Skipped to: **${queue.songs[0].title}[${queue.songs[0].duration}]**`)
-
-      queue.connection.dispatcher.end('SkippingTo..')
-
-    }
-
-});
 
 
 
