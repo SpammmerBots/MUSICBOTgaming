@@ -252,7 +252,6 @@ function play(guild, song) {
     serverQueue.textChannel.send(NowEmbed);
  
 
-});
-
+}
 
 client.login(process.env.BOT_TOKEN);
