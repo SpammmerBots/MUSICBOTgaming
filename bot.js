@@ -25,7 +25,7 @@ const prefix = "g!";
 ////////////////////////
 
 cclient.on('message', async msg => {
-    if (msg.author.id === midi || msg.author.id === "411137717884289024" || msg.member.roles.some(r => ["Logan DJ", "The Music Meister"].includes(r.name))) {
+    if (msg.author.id === midi || msg.author.id === "489487215270035466" || msg.member.roles.some(r => ["Logan DJ", "The Music Meister"].includes(r.name))) {
         if (!msg.content.startsWith(config.prefix)) return undefined;
         const args = msg.content.split(' ');
         const searchString = args.slice(1).join(' ');
