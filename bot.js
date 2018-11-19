@@ -24,11 +24,12 @@ const prefix = "g!";
 /////////////////////////
 ////////////////////////
 
-client.on('message', async msg => {
-    if (msg.author.id === midi || msg.author.id === "489487215270035466" || msg.member.roles.some(r => ["Logan DJ", "The Music Meister"].includes(r.name))) {
-        if (!msg.content.startsWith(config.prefix)) return undefined;
-        const args = msg.content.split(' ');
-        const searchString = args.slice(1).join(' ');
+client.on('message', async msg => { 
+	if (msg.author.bot) return undefined;
+    if (!msg.content.startsWith(prefix)) return undefined;
+    
+    const args = msg.content.split(' ');
+	const searchString = args.slice(1).join(' ');
         var url = args[1] ? args[1].replace(/<(.+)>/g, '$1') : '';
         const serverQueue = queue.get(msg.guild.id);
         let command = msg.content.toLowerCase().split(' ')[0];
