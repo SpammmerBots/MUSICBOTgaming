@@ -346,7 +346,7 @@ client.on('message', async msg => {
             
         }
         
-	} else if (command === `skip`) {
+	} else if (command === `Skip`) {
 
 		if (!msg.member.voiceChannel) return msg.channel.send("You Must be in a Voice channel to Run the Music commands!");
         if (!serverQueue) return msg.channel.send("There is **no Queue to skip!!**");
@@ -363,7 +363,7 @@ client.on('message', async msg => {
 		serverQueue.connection.dispatcher.end('Ok, stopped & disconnected from your Voice channel');
         return undefined;
         
-	} else if (command === `vol`) {
+	} else if (command === `Vol`) {
 
 		if (!msg.member.voiceChannel) return msg.channel.send("You Must be in a Voice channel to Run the Music commands!");
 		if (!serverQueue) return msg.channel.send('You only can use this command while music is playing!');
@@ -374,14 +374,14 @@ client.on('message', async msg => {
         
         return msg.channel.send(`**__Volume Now is__** **${args[1]} **:loud_sound:`);
 
-	} else if (command === `np`) {
+	} else if (command === `Np`) {
 
 		if (!serverQueue) return msg.channel.send('There is no Queue!');
 		const embedNP = new Discord.RichEmbed()
 	    .setDescription(`:small_blue_diamond:Now playing **${serverQueue.songs[0].title}**`)
         return msg.channel.sendEmbed(embedNP);
         
-	} else if (command === `queue`) {
+	} else if (command === `Queue`) {
 		
 		if (!serverQueue) return msg.channel.send('There is no Queue!!');
 		let index = 0;
@@ -393,14 +393,14 @@ client.on('message', async msg => {
 **Now playing :** **${serverQueue.songs[0].title}**`)
         .setColor("#f7abab")
 		return msg.channel.sendEmbed(embedqu);
-	} else if (command === `pause`) {
+	} else if (command === `P`) {
 		if (serverQueue && serverQueue.playing) {
 			serverQueue.playing = false;
 			serverQueue.connection.dispatcher.pause();
 			return msg.channel.send('**Paused :pause_button:**');
 		}
 		return msg.channel.send('There is no Queue to Pause!');
-	} else if (command === "resume") {
+	} else if (command === "r") {
 
 		if (serverQueue && !serverQueue.playing) {
 			serverQueue.playing = true;
