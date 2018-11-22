@@ -24,461 +24,298 @@ const prefix = "g!";
 /////////////////////////
 ////////////////////////
 
-client.on('message', async msg => { 
-	if (msg.author.bot) return undefined;
-    if (!msg.content.startsWith(prefix)) return undefined;
-    
-    const args = msg.content.split(' ');
-	const searchString = args.slice(1).join(' ');
-    
-	const url = args[1] ? args[1].replace(/<(.+)>/g, '$1') : '';
-	const serverQueue = queue.get(msg.guild.id);
+client.on('message', async msg => {
+  if (msg.author.bot) return undefined;
+  if (!msg.content.startsWith(prefix)) return undefined;
+  const args = msg.content.split(' ');
+  const searchString = args.slice(1).join(' ');
+  const url = args[1] ? args[1] .replace(/<(.+)>/g, '$1') : '';
+  const serverQueue = queue.get(msg.guild.id);
+  let command = msg.content.toLowerCase().split(" ")[0];
+  command = command.slice(prefix.length)
+  if (command === `play`) {
+    const voiceChannel = msg.member.voiceChannel;
+    if (!voiceChannel) return msg.channel.send('يجب توآجد حضرتك بروم صوتي .');
+    const permissions = voiceChannel.permissionsFor(msg.client.user);
+    if (!permissions.has('CONNECT')) {
+      return msg.channel.send('لا يتوآجد لدي صلاحية للتكلم بهذآ الروم');
+    }
+    if (!permissions.has('SPEAK')) {
+      return msg.channel.send('لا يتوآجد لدي صلاحية للتكلم بهذآ الروم');
+    }
 
-	let command = msg.content.toLowerCase().split(" ")[0];
-	command = command.slice(prefix.length)
+    if (!permissions.has('EMBED_LINKS')) {
+      return msg.channel.sendMessage("**يجب توآفر برمشن `EMBED LINKS`لدي **rl")
+      }
 
-	if (command === `play`) {
-		const voiceChannel = msg.member.voiceChannel;
-        
-        if (!voiceChannel) return msg.channel.send("I can't find you in any voice channel!");
-        
-        const permissions = voiceChannel.permissionsFor(msg.client.user);
-        
-        if (!permissions.has('CONNECT')) {
+    if (url.match(/^https?:\/\/(www.youtube.com|youtube.com)\/playlist(.*)$/)) {
+      const playlist = await youtube.getPlaylist(url);
+      const videos = await playlist.getVideos();
+      for (const video of Object.values(videos)) {
+        const video2 = await youtube.getVideoByID(video.id);
+        await handleVideo(video2, msg, voiceChannel, true);
+      }
+      return msg.channel.send(` **${playlist.title}** تم الإضآفة إلى قأئمة التشغيل`);
+    } else {
+      try {
 
-			return msg.channel.send("I don't have enough permissions to join your voice channel!");
-        }
-        
-		if (!permissions.has('SPEAK')) {
+        var video = await youtube.getVideo(url);
 
-			return msg.channel.send("I don't have enough permissions to speak in your voice channel!");
-		}
+      } catch (error) {
+        try {
+                          var fast = {};
+          var videos = await youtube.searchVideos(searchString, 10);
+          let index = 0;
+          const embed1 = new Discord.RichEmbed()
+              .setDescription(`**الرجآء من حضرتك إختيآر رقم المقطع** :
+${videos.map(video2 => `[**${++index}**] **${video2.title}**`).join('\n')}`)
+          .setFooter(`${msg.guild.name}`)
+            .setThumbnail('https://e.top4top.net/p_1001lsv3w1.png')
 
-		if (!permissions.has('EMBED_LINKS')) {
+          msg.channel.sendEmbed(embed1).then(message =>{
 
-			return msg.channel.sendMessage("I don't have enough permissions to insert a URLs!")
-		}
+            message.delete(15000)
 
-		if (url.match(/^https?:\/\/(www.youtube.com|youtube.com)\/playlist(.*)$/)) {
+          });
+          try {
+            var response = await msg.channel.awaitMessages(msg2 => msg2.content > 0 && msg2.content < 11, {
+              maxMatches: 1,
+              time: 20000,
+              errors: ['time']
+            })
 
-			const playlist = await youtube.getPlaylist(url);
-            const videos = await playlist.getVideos();
-            
-
-			for (const video of Object.values(videos)) {
-                
-                const video2 = await youtube.getVideoByID(video.id); 
-                await handleVideo(video2, msg, voiceChannel, true); 
+            }catch(err) {
+            console.error(err);
+            return msg.channel.send('لم يتم إختيآر مقطع صوتي');
             }
-			return msg.channel.send(`**${playlist.title}**, Just added to the queue!`);
-		} else {
-
-			try {
-
-                var video = await youtube.getVideo(url);
-                
-			} catch (error) {
-				try {
-
-					var videos = await youtube.searchVideos(searchString, 5);
-					let index = 0;
-                    const embed1 = new Discord.RichEmbed()
-                    .setTitle(":mag_right:  YouTube Search Results :")
-                    .setDescription(`
-                    ${videos.map(video2 => `${++index}. **${video2.title}**`).join('\n')}`)
-                    
-					.setColor("#f7abab")
-					msg.channel.sendEmbed(embed1).then(message =>{message.delete(20000)})
-					
-/////////////////					
-					try {
-
-						var response = await msg.channel.awaitMessages(msg2 => msg2.content > 0 && msg2.content < 11, {
-							maxMatches: 1,
-							time: 15000,
-							errors: ['time']
-						});
-					} catch (err) {
-						console.error(err);
-						return msg.channel.send('No one respone a number!!');
-                    }
-                    
-					const videoIndex = parseInt(response.first().content);
-                    var video = await youtube.getVideoByID(videos[videoIndex - 1].id);
-                    
-				} catch (err) {
-
-					console.error(err);
-					return msg.channel.send("I didn't find any results!");
-				}
-			}
-
-            return handleVideo(video, msg, voiceChannel);
-            
+          const videoIndex = parseInt(response.first().content);
+          var video = await youtube.getVideoByID(videos[videoIndex - 1].id);
+        } catch (err) {
+          console.error(err);
+          return msg.channel.send(':x: لا يتوفر نتآئج بحث ');
         }
-        
-	} else if (command === `skip`) {
+    }
 
-		if (!msg.member.voiceChannel) return msg.channel.send("You Must be in a Voice channel to Run the Music commands!");
-        if (!serverQueue) return msg.channel.send("There is **no Queue to skip!!**");
+      return handleVideo(video, msg, voiceChannel);
+    }
+  } else if (command === `skip`) {
+    if (!msg.member.voiceChannel) return msg.channel.send('أنت لست بروم صوتي .');
+    if (!serverQueue) return msg.channel.send('لا يتوفر مقطع لتجآوزه');
+    serverQueue.connection.dispatcher.end('تم تجآوز هذآ المقطع');
+    return undefined;
+  } else if (command === `stop`) {
+    if (!msg.member.voiceChannel) return msg.channel.send('أنت لست بروم صوتي .');
+    if (!serverQueue) return msg.channel.send('لا يتوفر مقطع لإيقآفه');
+    serverQueue.songs = [];
+    serverQueue.connection.dispatcher.end('تم إيقآف هذآ المقطع');
+    return undefined;
+  } else if (command === `vol`) {
+    if (!msg.member.voiceChannel) return msg.channel.send('أنت لست بروم صوتي .');
+    if (!serverQueue) return msg.channel.send('لا يوجد شيء شغآل.');
+    if (!args[1]) return msg.channel.send(`:loud_sound: مستوى الصوت **${serverQueue.volume}**`);
+    serverQueue.volume = args[1];
+    serverQueue.connection.dispatcher.setVolumeLogarithmic(args[1] / 50);
+    return msg.channel.send(`:speaker: تم تغير الصوت الي **${args[1]}**`);
+  } else if (command === `np`) {
+    if (!serverQueue) return msg.channel.send('لا يوجد شيء حالي ف العمل.');
+    const embedNP = new Discord.RichEmbed()
+  .setDescription(`:notes: الان يتم تشغيل : **${serverQueue.songs[0].title}**`)
+    return msg.channel.sendEmbed(embedNP);
+  } else if (command === `replay`) {
+    if (!serverQueue) return msg.channel.send('لا يوجد شيء حالي ف العمل.');
+    const embedNP = new Discord.RichEmbed()
+  .setDescription(`سيتم اعاده تشغيل الفديو :**${serverQueue.songs[0].title}**`)
+  msg.channel.send({embed: embedNP})
+     return handleVideo(video, msg, msg.member.voiceChannel);
 
-		serverQueue.connection.dispatcher.end('***:fast_forward: Skipped :thumbsup:***');
-        return undefined;
-        
-	} else if (command === `stop`) {
+  } else if (command === `queue`) {
+    if (!serverQueue) return msg.channel.send('لا يوجد شيء حالي ف العمل.');
+    let index = 0;
+    const embedqu = new Discord.RichEmbed()
+.setDescription(`**Songs Queue**
+${serverQueue.songs.map(song => `**${++index} -** ${song.title}`).join('\n')}
+**الان يتم تشغيل** ${serverQueue.songs[0].title}`)
+    return msg.channel.sendEmbed(embedqu);
+  } else if (command === `pause`) {
+    if (serverQueue && serverQueue.playing) {
+      serverQueue.playing = false;
+      serverQueue.connection.dispatcher.pause();
+      return msg.channel.send('تم إيقاف الموسيقى مؤقتا!');
+    }
+    return msg.channel.send('لا يوجد شيء حالي ف العمل.');
+  } else if (command === "resume") {
+    if (serverQueue && !serverQueue.playing) {
+      serverQueue.playing = true;
+      serverQueue.connection.dispatcher.resume();
+      return msg.channel.send('استأنفت الموسيقى بالنسبة لك !');
+    }
+    return msg.channel.send('لا يوجد شيء حالي في العمل.');
+  }
 
-		if (!msg.member.voiceChannel) return msg.channel.send("You Must be in a Voice channel to Run the Music commands!");
-        if (!serverQueue) return msg.channel.send("There is no Queue to stop!!");
-        
-		serverQueue.songs = [];
-		serverQueue.connection.dispatcher.end('Ok, stopped & disconnected from your Voice channel');
-        return undefined;
-        
-	} else if (command === `vol`) {
-
-		if (!msg.member.voiceChannel) return msg.channel.send("You Must be in a Voice channel to Run the Music commands!");
-		if (!serverQueue) return msg.channel.send('You only can use this command while music is playing!');
-        if (!args[1]) return msg.channel.send(`The bot volume is **${serverQueue.volume}**`);
-        
-		serverQueue.volume = args[1];
-        serverQueue.connection.dispatcher.setVolumeLogarithmic(args[1] / 50);
-        
-        return msg.channel.send(`**__Volume Now is__** **${args[1]} **:loud_sound:`);
-
-	} else if (command === `np`) {
-
-		if (!serverQueue) return msg.channel.send('There is no Queue!');
-		const embedNP = new Discord.RichEmbed()
-	    .setDescription(`:small_blue_diamond:Now playing **${serverQueue.songs[0].title}**`)
-        return msg.channel.sendEmbed(embedNP);
-        
-	} else if (command === `queue`) {
-		
-		if (!serverQueue) return msg.channel.send('There is no Queue!!');
-		let index = 0;
-//	//	//
-		const embedqu = new Discord.RichEmbed()
-        .setTitle("The Queue Songs:notes:")
-        .setDescription(`
-        ${serverQueue.songs.map(song => `${++index}. **${song.title}**`).join('\n')}
-**Now playing :** **${serverQueue.songs[0].title}**`)
-        .setColor("#f7abab")
-		return msg.channel.sendEmbed(embedqu);
-	} else if (command === `pause`) {
-		if (serverQueue && serverQueue.playing) {
-			serverQueue.playing = false;
-			serverQueue.connection.dispatcher.pause();
-			return msg.channel.send('**Paused :pause_button:**');
-		}
-		return msg.channel.send('There is no Queue to Pause!');
-	} else if (command === "resume") {
-
-		if (serverQueue && !serverQueue.playing) {
-			serverQueue.playing = true;
-			serverQueue.connection.dispatcher.resume();
-            return msg.channel.send('**:play_pause: Resuming :thumbsup:**');
-            
-		}
-		return msg.channel.send('Queue is empty!');
-	}
-
-	return undefined;
-});
-
+  return undefined;
 async function handleVideo(video, msg, voiceChannel, playlist = false) {
-	const serverQueue = queue.get(msg.guild.id);
-	console.log(video);
-	
-
-	const song = {
-		id: video.id,
-		title: Util.escapeMarkdown(video.title),
-		url: `https://www.youtube.com/watch?v=${video.id}`
-	};
-	if (!serverQueue) {
-		const queueConstruct = {
-			textChannel: msg.channel,
-			voiceChannel: voiceChannel,
-			connection: null,
-			songs: [],
-			volume: 5,
-			playing: true
-		};
-		queue.set(msg.guild.id, queueConstruct);
-
-		queueConstruct.songs.push(song);
-
-		try {
-			var connection = await voiceChannel.join();
-			queueConstruct.connection = connection;
-			play(msg.guild, queueConstruct.songs[0]);
-		} catch (error) {
-			console.error(`I could not join the voice channel: ${error}!`);
-			queue.delete(msg.guild.id);
-			return msg.channel.send(`Can't join this channel: ${error}!`);
-		}
-	} else {
-		serverQueue.songs.push(song);
-		console.log(serverQueue.songs);
-		if (playlist) return undefined;
-		else return msg.channel.send(`**${song.title}**, just added to the queue!:100:`);
-	} 
-	return undefined;
+  const serverQueue = queue.get(msg.guild.id);
+  const song = {
+    id: video.id,
+    title: Util.escapeMarkdown(video.title),
+    url: `https://www.youtube.com/watch?v=${video.id}`,
+    time:`${video.duration.hours}:${video.duration.minutes}:${video.duration.seconds}`,
+    eyad:`${video.thumbnails.high.url}`,
+    best:`${video.channel.title}`,
+    bees:`${video.raw.snippet.publishedAt}`,
+    shahd:`${video.raw.kind}`,
+    zg:`${video.raw.snippet.channelId}`,
+        views:`${video.raw.views}`,
+        like:`${video.raw.likeCount}`,
+        dislike:`${video.raw.dislikeCount}`,
+        hi:`${video.raw.id}`
+  };
+  if (!serverQueue) {
+    const queueConstruct = {
+      textChannel: msg.channel,
+      voiceChannel: voiceChannel,
+      connection: null,
+      songs: [],
+      volume: 5,
+      playing: true
+    };
+    queue.set(msg.guild.id, queueConstruct);
+    queueConstruct.songs.push(song);
+    try {
+      var connection = await voiceChannel.join();
+      queueConstruct.connection = connection;
+      play(msg.guild, queueConstruct.songs[0]);
+    } catch (error) {
+      console.error(`I could not join the voice channel: ${error}`);
+      queue.delete(msg.guild.id);
+      return msg.channel.send(`لا أستطيع دخول هذآ الروم ${error}`);
+    }
+  } else {
+    serverQueue.songs.push(song);
+    console.log(serverQueue.songs);
+    if (playlist) return undefined;
+    else return msg.channel.send(` **${song.title}** تم اضافه الاغنية الي القائمة!`);
+  }
+  return undefined;
 }
 
 function play(guild, song) {
-	const serverQueue = queue.get(guild.id);
+  const serverQueue = queue.get(guild.id);
 
-	if (!song) {
-		serverQueue.voiceChannel.leave();
-		queue.delete(guild.id);
-		return;
-	}
-	console.log(serverQueue.songs);
+  if (!song) {
+    serverQueue.voiceChannel.leave();
+    queue.delete(guild.id);
+    return;
+  }
+  console.log(serverQueue.songs);
+  const dispatcher = serverQueue.connection.playStream(ytdl(song.url))
+    .on('end', reason => {
+      if (reason === 'Stream is not generating quickly enough.') console.log('Song ended.');
+      else console.log(reason);
+      serverQueue.songs.shift();
+      play(guild, serverQueue.songs[0]);
+    })
+    .on('error', error => console.error(error));
+  dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+    fetchVideoInfo(`${song.hi}`, function (err,  idk) {
+  if (err) throw new Error(err);
+  console.log( idk);
+      const yyyy = {}
+  if(!yyyy[msg.guild.id]) yyyy[msg.guild.id] = {
+    like: `${ idk.likeCount}`,
+    dislike: `${ idk.dislikeCount}`
+  }
+  serverQueue.textChannel.send({embed : new Discord.RichEmbed()
+  .setTitle(`**${ idk.title}**`)
+  .setURL( idk.url)
+  .addField('Time The Video :' , `${song.time}`, true)
+  .addField('Channel Name :' , `${song.best}`, true)
+  .addField('Channel ID :' , `${song.zg}`, true)
+  .addField('Video Created at :' , `${ idk.datePublished}`, true)
+  .addField('Views :' , `${ idk.views}`, true)
+  .addField('Like👍 :' , `${ idk.likeCount}`, true)
+  .addField('dislike👎 :' , `${ idk.dislikeCount}`, true)
+  .addField('comments :' , `${ idk.commentCount}`, true)
+  .setImage(`${song.eyad}`)
+  .setThumbnail('http://cdn.akhbaar24.com/430e061a-f89a-43c7-86d9-82fae5f7c495.jpg')
+  .setColor('#ff0000')
+  .setTimestamp()
+  }).then(love => {
+    love.react('👍').then(r=>{
+    love.react('👎').then(r =>{
+    love.react('🙌').then(r=> {
+    let likee = (reaction, user) => reaction.emoji.name === '👍' && user.id === msg.author.id;
+    let dislikee = (reaction, user) => reaction.emoji.name === '👎' && user.id === msg.author.id;
+    let cnn = (reaction, user) => reaction.emoji.name === '🙌' && user.id === msg.author.id;
 
-	const dispatcher = serverQueue.connection.playStream(ytdl(song.url))
-		.on('end', reason => {
-			if (reason === 'Stream is not generating quickly enough.') console.log('Song ended.');
-			else console.log(reason);
-			serverQueue.songs.shift();
-			play(guild, serverQueue.songs[0]);
-		})
-		.on('error', error => console.error(error));
-	dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+    let ll = love.createReactionCollector(likee , {max:5});
+    let dd = love.createReactionCollector(dislikee , {max:5});
+    let cn = love.createReactionCollector(cnn , {max:5});
 
-	serverQueue.textChannel.send(`**${song.title}**, is now playing!`);
-}
-/////////////////////////////////////////////////////////////////4kal tany 
-
-
-
-
-client.on('message', async msg => { 
-	if (msg.author.bot) return undefined;
-    if (!msg.content.startsWith(prefix)) return undefined;
-    
-    const args = msg.content.split(' ');
-	const searchString = args.slice(1).join(' ');
-    
-	const url = args[1] ? args[1].replace(/<(.+)>/g, '$1') : '';
-	const serverQueue = queue.get(msg.guild.id);
-
-	let command = msg.content.toLowerCase().split(" ")[0];
-	command = command.slice(prefix.length)
-
-	if (command === `p`) {
-		const voiceChannel = msg.member.voiceChannel;
-        
-        if (!voiceChannel) return msg.channel.send("I can't find you in any voice channel!");
-        
-        const permissions = voiceChannel.permissionsFor(msg.client.user);
-        
-        if (!permissions.has('CONNECT')) {
-
-			return msg.channel.send("I don't have enough permissions to join your voice channel!");
-        }
-        
-		if (!permissions.has('SPEAK')) {
-
-			return msg.channel.send("I don't have enough permissions to speak in your voice channel!");
-		}
-
-		if (!permissions.has('EMBED_LINKS')) {
-
-			return msg.channel.sendMessage("I don't have enough permissions to insert a URLs!")
-		}
-
-		if (url.match(/^https?:\/\/(www.youtube.com|youtube.com)\/playlist(.*)$/)) {
-
-			const playlist = await youtube.getPlaylist(url);
-            const videos = await playlist.getVideos();
-            
-
-			for (const video of Object.values(videos)) {
-                
-                const video2 = await youtube.getVideoByID(video.id); 
-                await handleVideo(video2, msg, voiceChannel, true); 
-            }
-			return msg.channel.send(`**${playlist.title}**, Just added to the queue!`);
-		} else {
-
-			try {
-
-                var video = await youtube.getVideo(url);
-                
-			} catch (error) {
-				try {
-
-					var videos = await youtube.searchVideos(searchString, 5);
-					let index = 0;
-                    const embed1 = new Discord.RichEmbed()
-                    .setTitle(":mag_right:  YouTube Search Results :")
-                    .setDescription(`
-                    ${videos.map(video2 => `${++index}. **${video2.title}**`).join('\n')}`)
-                    
-					.setColor("#f7abab")
-					msg.channel.sendEmbed(embed1).then(message =>{message.delete(20000)})
-					
-/////////////////					
-					try {
-
-						var response = await msg.channel.awaitMessages(msg2 => msg2.content > 0 && msg2.content < 11, {
-							maxMatches: 1,
-							time: 15000,
-							errors: ['time']
-						});
-					} catch (err) {
-						console.error(err);
-						return msg.channel.send('No one respone a number!!');
-                    }
-                    
-					const videoIndex = parseInt(response.first().content);
-                    var video = await youtube.getVideoByID(videos[videoIndex - 1].id);
-                    
-				} catch (err) {
-
-					console.error(err);
-					return msg.channel.send("I didn't find any results!");
-				}
-			}
-
-            return handleVideo(video, msg, voiceChannel);
-            
-        }
-        
-	} else if (command === `Skip`) {
-
-		if (!msg.member.voiceChannel) return msg.channel.send("You Must be in a Voice channel to Run the Music commands!");
-        if (!serverQueue) return msg.channel.send("There is **no Queue to skip!!**");
-
-		serverQueue.connection.dispatcher.end('***:fast_forward: Skipped :thumbsup:***');
-        return undefined;
-        
-	} else if (command === `Stop`) {
-
-		if (!msg.member.voiceChannel) return msg.channel.send("You Must be in a Voice channel to Run the Music commands!");
-        if (!serverQueue) return msg.channel.send("There is no Queue to stop!!");
-        
-		serverQueue.songs = [];
-		serverQueue.connection.dispatcher.end('Ok, stopped & disconnected from your Voice channel');
-        return undefined;
-        
-	} else if (command === `Vol`) {
-
-		if (!msg.member.voiceChannel) return msg.channel.send("You Must be in a Voice channel to Run the Music commands!");
-		if (!serverQueue) return msg.channel.send('You only can use this command while music is playing!');
-        if (!args[1]) return msg.channel.send(`The bot volume is **${serverQueue.volume}**`);
-        
-		serverQueue.volume = args[1];
-        serverQueue.connection.dispatcher.setVolumeLogarithmic(args[1] / 50);
-        
-        return msg.channel.send(`**__Volume Now is__** **${args[1]} **:loud_sound:`);
-
-	} else if (command === `Np`) {
-
-		if (!serverQueue) return msg.channel.send('There is no Queue!');
-		const embedNP = new Discord.RichEmbed()
-	    .setDescription(`:small_blue_diamond:Now playing **${serverQueue.songs[0].title}**`)
-        return msg.channel.sendEmbed(embedNP);
-        
-	} else if (command === `Queue`) {
-		
-		if (!serverQueue) return msg.channel.send('There is no Queue!!');
-		let index = 0;
-//	//	//
-		const embedqu = new Discord.RichEmbed()
-        .setTitle("The Queue Songs:notes:")
-        .setDescription(`
-        ${serverQueue.songs.map(song => `${++index}. **${song.title}**`).join('\n')}
-**Now playing :** **${serverQueue.songs[0].title}**`)
-        .setColor("#f7abab")
-		return msg.channel.sendEmbed(embedqu);
-	} else if (command === `P`) {
-		if (serverQueue && serverQueue.playing) {
-			serverQueue.playing = false;
-			serverQueue.connection.dispatcher.pause();
-			return msg.channel.send('**Paused :pause_button:**');
-		}
-		return msg.channel.send('There is no Queue to Pause!');
-	} else if (command === "r") {
-
-		if (serverQueue && !serverQueue.playing) {
-			serverQueue.playing = true;
-			serverQueue.connection.dispatcher.resume();
-            return msg.channel.send('**:play_pause: Resuming :thumbsup:**');
-            
-		}
-		return msg.channel.send('Queue is empty!');
-	}
-
-	return undefined;
+        ll.on("collect", r => {
+          yyyy[msg.guild.id].like++;
+  love.edit({embed : new Discord.RichEmbed()
+  .setTitle(`**${ idk.title}**`)
+  .setURL( idk.url)
+  .addField('Time The Video :' , `${song.time}`, true)
+  .addField('Channel Name :' , `${song.best}`, true)
+  .addField('Channel ID :' , `${song.zg}`, true)
+  .addField('Video Created at :' , `${ idk.datePublished}`, true)
+  .addField('Views :' , `${ idk.views}`, true)
+  .addField('Like👍 :' , `${yyyy[msg.guild.id].like}`, true)
+  .addField('dislike👎 :' , `${ idk.dislikeCount}`, true)
+  .addField('comments :' , `${ idk.commentCount}`, true)
+  .setImage(`${song.eyad}`)
+  .setThumbnail('http://cdn.akhbaar24.com/430e061a-f89a-43c7-86d9-82fae5f7c495.jpg')
+  .setColor('#ff0000')
+  .setTimestamp()
 });
+    })
 
-async function handleVideo(video, msg, voiceChannel, playlist = false) {
-	const serverQueue = queue.get(msg.guild.id);
-	console.log(video);
-	
-
-	const song = {
-		id: video.id,
-		title: Util.escapeMarkdown(video.title),
-		url: `https://www.youtube.com/watch?v=${video.id}`
-	};
-	if (!serverQueue) {
-		const queueConstruct = {
-			textChannel: msg.channel,
-			voiceChannel: voiceChannel,
-			connection: null,
-			songs: [],
-			volume: 5,
-			playing: true
-		};
-		queue.set(msg.guild.id, queueConstruct);
-
-		queueConstruct.songs.push(song);
-
-		try {
-			var connection = await voiceChannel.join();
-			queueConstruct.connection = connection;
-			play(msg.guild, queueConstruct.songs[0]);
-		} catch (error) {
-			console.error(`I could not join the voice channel: ${error}!`);
-			queue.delete(msg.guild.id);
-			return msg.channel.send(`Can't join this channel: ${error}!`);
-		}
-	} else {
-		serverQueue.songs.push(song);
-		console.log(serverQueue.songs);
-		if (playlist) return undefined;
-		else return msg.channel.send(`**${song.title}**, just added to the queue!:100:`);
-	} 
-	return undefined;
+    dd.on("collect", r => {
+      yyyy[msg.guild.id].dislike++;
+  love.edit({embed : new Discord.RichEmbed()
+  .setTitle(`**${ idk.title}**`)
+  .setURL( idk.url)
+  .addField('Time The Video :' , `${song.time}`, true)
+  .addField('Channel Name :' , `${song.best}`, true)
+  .addField('Channel ID :' , `${song.zg}`, true)
+  .addField('Video Created at :' , `${ idk.datePublished}`, true)
+  .addField('Views :' , `${ idk.views}`, true)
+  .addField('Like👍 :' , `${ idk.likeCount}`, true)
+  .addField('dislike👎 :' , `${yyyy[msg.guild.id].dislike}`, true)
+  .addField('comments :' , `${ idk.commentCount}`, true)
+  .setImage(`${song.eyad}`)
+  .setThumbnail('http://cdn.akhbaar24.com/430e061a-f89a-43c7-86d9-82fae5f7c495.jpg')
+  .setColor('#ff0000')
+  .setTimestamp()
+});
+})
+    cn.on("collect", r => {
+  love.edit({embed : new Discord.RichEmbed()
+  .setTitle(`**${ idk.title}**`)
+  .setURL( idk.url)
+  .addField('Time The Video :' , `${song.time}`, true)
+  .addField('Channel Name :' , `${song.best}`, true)
+  .addField('Channel ID :' , `${song.zg}`, true)
+  .addField('Video Created at :' , `${ idk.datePublished}`, true)
+  .addField('Views :' , `${ idk.views}`, true)
+  .addField('Like👍 :' , `${ idk.likeCount}`, true)
+  .addField('dislike👎 :' , `${ idk.dislikeCount}`, true)
+  .addField('comments :' , `${ idk.commentCount}`, true)
+  .setImage(`${song.eyad}`)
+  .setThumbnail('http://cdn.akhbaar24.com/430e061a-f89a-43c7-86d9-82fae5f7c495.jpg')
+  .setColor('#ff0000')
+  .setTimestamp()
+});
+})
+})
+})
+})
+})
+})
 }
-
-function play(guild, song) {
-	const serverQueue = queue.get(guild.id);
-
-	if (!song) {
-		serverQueue.voiceChannel.leave();
-		queue.delete(guild.id);
-		return;
-	}
-	console.log(serverQueue.songs);
-
-	const dispatcher = serverQueue.connection.playStream(ytdl(song.url))
-		.on('end', reason => {
-			if (reason === 'Stream is not generating quickly enough.') console.log('Song ended.');
-			else console.log(reason);
-			serverQueue.songs.shift();
-			play(guild, serverQueue.songs[0]);
-		})
-		.on('error', error => console.error(error));
-	dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
-
-	serverQueue.textChannel.send(`**${song.title}**, is now playing!`);
-}
-
-
+});
 
 
 
