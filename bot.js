@@ -22,7 +22,7 @@ const client = new Discord.Client({disableEveryone: true});
 
 const prefix = "g!";
 /////////////////////////
-////////////////////////
+////////////////////////QUAstyle
 
 client.on('message', async msg => {
   if (msg.author.bot) return undefined;
